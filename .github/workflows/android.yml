@@ -3,21 +3,21 @@ name: Android CI
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:   # <-- Ini nambahin tombol "Run workflow" di tab Actions
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: true
 
     - name: set up JDK
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -41,26 +41,26 @@ jobs:
       run: ./gradlew assembleRelease
 
     - name: Upload a Debug Artifact
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
-        name: nexalloy-ci-debug-apk
+        name: nexalloy-debug-apk
         path: app/build/outputs/apk/debug
 
     - name: Upload a Release Artifact
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
-        name: nexalloy-ci-release-apk
+        name: nexalloy-release-apk
         path: |
           app/build/outputs/apk/release
           app/build/outputs/mapping/release/mapping.txt
 
     - name: Create AutoBuild Release
       run: |
-        LATEST_REL=$(gh release view --json tagName -q .tagName)
+        LATEST_REL=$(gh release view --json tagName -q .tagName 2>/dev/null || echo "")
         GIT_DESCRIBE=$(git rev-parse --short HEAD)
         cd app/build/outputs/apk/release/
         mv app-release.apk NexAlloy-${GIT_DESCRIBE}.apk
-        gh release delete autobuild --yes || true
+        gh release delete autobuild --yes 2>/dev/null || true
         gh release create autobuild NexAlloy-${GIT_DESCRIBE}.apk \
           --prerelease \
           --title "Nightly Build ${GIT_DESCRIBE}" \
